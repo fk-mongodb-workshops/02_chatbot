@@ -23,10 +23,17 @@ class ResponseBox extends Component {
 
         this.state = {
             answer: "",
-            loading: true
+            loading: true,
+            trigger: false
         };
 
-        // this.triggetNext = this.triggetNext.bind(this);
+        this.triggerNext = this.triggerNext.bind(this);
+    }
+
+    triggerNext() {
+        this.setState({ trigger: true }, () => {
+            this.props.triggerNextStep();
+        });
     }
 
     componentWillMount() {
@@ -48,6 +55,7 @@ class ResponseBox extends Component {
                 loading: false,
                 answer: data.data.response
             })
+            this.triggerNext()
         });
     }
 
@@ -94,7 +102,7 @@ class SimpleForm extends Component {
                             },
                             {
                                 id: 'ask-question',
-                                message: 'Hi {previousValue}, let me know what you would like to ask?',
+                                message: 'Allright, let me know what you would like to ask?',
                                 trigger: 'question',
                             },
                             {
@@ -105,9 +113,26 @@ class SimpleForm extends Component {
                             {
                                 id: 'response-spending',
                                 component: <ResponseBox />,
-                                // waitAction: true,
-                                end: true
-                            }
+                                waitAction: true,
+                                trigger: 'ask-for-more',
+                            },
+                            {
+                                id: 'ask-for-more',
+                                message: 'Do you want to ask another question?',
+                                trigger: 'ask-for-more-options'
+                            },
+                            {
+                                id: 'ask-for-more-options',
+                                options: [
+                                    { value: 1, label: 'Yes', trigger: 'ask-question' },
+                                    { value: 2, label: 'No', trigger: 'end' }
+                                ],
+                            },
+                            {
+                                id: 'end',
+                                end: true,
+                                message: 'See you again next time',
+                            },
                         ]}
                     />
                 </div>
