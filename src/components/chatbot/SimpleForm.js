@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import ChatBot from 'react-simple-chatbot';
+import ChatBot, { Loading } from 'react-simple-chatbot';
 import { ThemeProvider } from 'styled-components';
+import axios from 'axios';
 
 // all available theme props
 const theme = {
@@ -15,57 +16,98 @@ const theme = {
     userFontColor: '#4a4a4a',
 };
 
+class ResponseBox extends Component {
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            answer: "",
+            loading: true
+        };
+
+        // this.triggetNext = this.triggetNext.bind(this);
+    }
+
+    componentWillMount() {
+        const self = this;
+        const { steps } = this.props;
+        // console.log(steps)
+        const userId = steps.userid.value;
+        const question = steps.question.value;
+
+        const client = axios.create({
+            baseURL: "https://api.linkaja.demo.karnagi.monster/ask"
+        });
+        client.post('', {
+            "user_id": userId,
+            "question": question
+        }).then((data) => {
+            console.log(data);
+            this.setState({
+                loading: false,
+                answer: data.data.response
+            })
+        });
+    }
+
+    render() {
+
+        const { answer, loading } = this.state;
+
+        return <>
+            {
+                loading ? <Loading /> :
+                    <div>
+                        {answer}
+                    </div>
+            }
+        </>
+
+    }
+}
+
 class SimpleForm extends Component {
+
     render() {
         return (
             <ThemeProvider theme={theme}>
                 <div>
                     <ChatBot
+                        handleEnd={this.handleEnd}
                         headerTitle="LinkAja Merchant Bot"
                         steps={[
                             {
                                 id: 'intro',
-                                message: 'Hi there, LinkAJa Merchant Bot is here. Let me know what you would like ask.',
-                                trigger: 'ask-options',
+                                message: 'Hi there, LinkAJa Merchant Bot is here. I am here to assist you with question about fuel spending in Pertamina.',
+                                trigger: 'ask-userid',
                             },
                             {
-                                id: 'ask-options',
-                                options: [
-                                    { value: 'fieldgas', label: 'About fuel and gas', trigger: 'fuelgas-response' },
-                                    { value: 'merchant', label: 'About merchant', trigger: 'merchant-response' },
-                                ],
-
+                                id: 'ask-userid',
+                                message: 'First of all, let me know your User ID?',
+                                trigger: 'userid',
                             },
                             {
-                                id: 'fuelgas-response',
-                                message: 'No worries, tell me more about what you wanna know on fuel and gas',
-                                trigger: 'ask-fieldgas',
-                            },
-                            {
-                                id: 'merchant-response',
-                                message: 'Go head, tell me more about what you wanna know about merchant',
-                                trigger: 'ask-merchant',
-                            },
-                            {
-                                id: 'ask-fieldgas',
-                                user: true, 
-                                trigger: 'response-fieldgas',
-                            },
-                            {
-                                id: 'ask-merchant',
+                                id: 'userid',
                                 user: true,
-                                trigger: 'response-merchant',
+                                trigger: 'ask-question',
                             },
                             {
-                                id: 'response-fieldgas',
-                                message: 'We will get back to you on your query',
-                                end: true,
-                            }, 
-                            {
-                                id: 'response-merchant',
-                                message: 'We will get back to you on your query',
-                                end: true,
+                                id: 'ask-question',
+                                message: 'Hi {previousValue}, let me know what you would like to ask?',
+                                trigger: 'question',
                             },
+                            {
+                                id: 'question',
+                                user: true,
+                                trigger: 'response-spending',
+                            },
+                            {
+                                id: 'response-spending',
+                                component: <ResponseBox />,
+                                // waitAction: true,
+                                end: true
+                            }
                         ]}
                     />
                 </div>
